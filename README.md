@@ -1,2 +1,2 @@
-# VQ-CNNI
+# VQ-CNNI and VQI training and testing code
  
