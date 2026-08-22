@@ -325,14 +325,26 @@ def _vqi_ref_levels(mode):
     return {"VQI-local": v}
 
 
-def _ranking_panel(ax, data, order, refs, title=None):
-    """SWPE box plots across activations with the VQI-local reference."""
-    bp = ax.boxplot([data[a] for a in order],
-                    tick_labels=[RANK_LABELS[a] for a in order],
+def _ranking_panel(ax, data, order, refs, title=None, qfi=None, colors=None):
+    """SWPE box plots across activations with the VQI-local reference.
+
+    ``qfi`` (optional dict act -> value) appends the pure-state QFI of the
+    pre-measurement probe at phi=0 in parentheses below each activation
+    name, as in the four-panel Fig.~2 draft; ``colors`` (optional dict
+    act -> color) tints each quartile box with the activation's curve
+    color instead of the uniform default fill.
+    """
+    labels = [RANK_LABELS[a] for a in order]
+    if qfi is not None:
+        labels = [f"{RANK_LABELS[a]}\n({qfi[a]:.1f})" for a in order]
+    bp = ax.boxplot([data[a] for a in order], tick_labels=labels,
                     showfliers=False, patch_artist=True, widths=0.6)
-    for patch in bp["boxes"]:
-        patch.set_facecolor("#9ecae1")
-        patch.set_alpha(0.6)
+    for i, patch in enumerate(bp["boxes"]):
+        c = colors[order[i]] if colors is not None else "#9ecae1"
+        patch.set_facecolor(c)
+        patch.set_alpha(0.45 if colors is not None else 0.6)
+        if colors is not None:
+            patch.set_edgecolor(c)
     for lab, v in refs.items():
         ax.axhline(v, ls="--", lw=1.5, color=VQI_LINE_COLORS[lab],
                    label=f"{lab}, $\\phi\\approx0$: {v:.1f} dB")
@@ -340,7 +352,10 @@ def _ranking_panel(ax, data, order, refs, title=None):
     if title:
         ax.set_title(title, fontsize=11)
     ax.grid(True, ls="--", alpha=0.3, axis="y")
-    ax.tick_params(axis="x", rotation=25, labelsize=9)
+    if qfi is not None:
+        ax.tick_params(axis="x", rotation=0, labelsize=8.5)
+    else:
+        ax.tick_params(axis="x", rotation=25, labelsize=9)
     lo = np.percentile(np.concatenate([data[a] for a in order]), 1) - 3
     hi = np.percentile(np.concatenate([data[a] for a in order]), 99) + 9
     ax.set_ylim(lo, hi)
@@ -694,8 +709,12 @@ def fig5_active():
     # values and finite shots, with VQI-local indicated at its optimal
     # operating point phi~0 in the corresponding evaluation mode
     exact_rank, shots_rank, rank_order = _load_ranking_data()
-    _ranking_panel(ax2, exact_rank, rank_order, _vqi_ref_levels("exact"))
-    _ranking_panel(ax3, shots_rank, rank_order, _vqi_ref_levels("shots"))
+    qfi_vals = {a: models[a]["qfi"] for a in RANK_ACTS}
+    act_colors = {a: models[a]["color"] for a in RANK_ACTS}
+    _ranking_panel(ax2, exact_rank, rank_order, _vqi_ref_levels("exact"),
+                   qfi=qfi_vals, colors=act_colors)
+    _ranking_panel(ax3, shots_rank, rank_order, _vqi_ref_levels("shots"),
+                   qfi=qfi_vals, colors=act_colors)
     ax2.text(-0.16, 1.03, "(c)", transform=ax2.transAxes, fontsize=14,
              fontweight="bold")
     ax3.text(-0.16, 1.03, "(d)", transform=ax3.transAxes, fontsize=14,
