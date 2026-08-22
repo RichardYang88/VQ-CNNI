@@ -9,11 +9,13 @@ point-by-point replies are in `paper/response_to_reviewers.tex`.
 ## Verified final numbers (taken from `revision_experiments/results/*.npz`)
 
 ### Matched-condition baselines (N=8, 3 seeds, finite-shot median SWPE)
-- VQ-CNNI: −57.1 dB (IQR −61.8 to −56.3)
-- VQI-NonParamEst (nonparametric single-outcome readout, formerly "VQI-global (lookup)"): −12.7 dB
-- VQI-LinearEst (linear estimator, formerly "VQI-global (linear)"): −8.7 dB
-- VQI-local: −7.1 dB
-- Gap vs best matched-objective baseline: ≥44 dB
+- The three VQI variants are locally optimal estimators, reported at their optimal operating point (test phase closest to φ=0):
+  - VQI-local: −55.3 dB
+  - VQI-LinearEst (linear estimator, formerly "VQI-global (linear)"): −48.3 dB
+  - VQI-NonParamEst (nonparametric single-outcome readout, formerly "VQI-global (lookup)"): −59.8 dB
+  - Full-range medians degrade to −7.1 / −8.7 / −12.7 dB (VQI-local / LinearEst / NonParamEst): the local optimum cannot be sustained globally
+- VQ-CNNI (global estimator, full-range median): −57.1 dB (IQR −61.8 to −56.3)
+- VQ-CNNI matches the best local baseline value within ≈2.7 dB while remaining uniformly accurate over [−π, π)
 
 ### Fixed-circuit decoder ablation (N=8, 2 seeds, exact evaluation)
 - VQ-CNNI-fixed: −5.7 dB (worst seed −5.7, best −5.8); VQ-CNNI: −62.5 dB
@@ -56,10 +58,12 @@ point-by-point replies are in `paper/response_to_reviewers.tex`.
 
 ### Sec. II.D
 - Evaluation protocol separated into exact and finite-shot modes; PCA and QFI computation documented; noise channels documented; hyperparameters collected in Table I (R1.6).
+- Table I reformatted: fixed-width wrapped columns and shortened entries so the table fits the page width.
 
 ### Sec. III.A
 - Matched-condition comparison under finite shots (20 trials of 10^6 shots), three independent training runs per model (R2.1, R1.5, R1.3).
 - Fig. 2 replaced by the matched-condition figure; caption states the [−π,π) convention and the curves are plotted strictly on that domain (the out-of-domain duplicate endpoint is removed).
+- Baseline reporting made consistent with their local nature: the three VQI variants are locally optimal estimators and are quoted at their best operating point (test phase closest to φ=0): −55.3/−48.3/−59.8 dB (VQI-local / VQI-LinearEst / VQI-NonParamEst); the text states that these values are strictly local (a linear or single-outcome readout cannot sustain them globally; full-range medians degrade to −7.1/−8.7/−12.7 dB), while VQ-CNNI keeps its full-range median (−57.1 dB, IQR −61.8 to −56.3), within ≈2.7 dB of the best local value but uniform over [−π,π). Fig. 2(b) caption updated accordingly.
 
 ### Sec. III.B
 - Fixed-circuit decoder ablation (VQ-CNNI-fixed) moved to the main text (R1.5).
