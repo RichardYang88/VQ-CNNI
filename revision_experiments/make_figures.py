@@ -104,6 +104,14 @@ def fig6_combined():
               "vqi_global_lookup": ("#ff7f0e", "^", "VQI-NonParamEst"),
               "vqi_global_linear": ("#2ca02c", "s", "VQI-LinearEst")}
     for pref, (color, mk, label) in styles.items():
+        # The three VQI variants are locally optimal estimators trained to
+        # concentrate sensitivity around phi=0, so they are reported at
+        # their optimal operating point (evaluation phase closest to
+        # phi=0); VQ-CNNI is a global estimator and keeps the full-range
+        # median.
+        at_phi0 = pref != "vqcnni"
+        if at_phi0:
+            label += r" ($\phi\!=\!0$)"
         meds = []
         for N in Ns:
             runs = load_runs(pref, N)
@@ -111,7 +119,12 @@ def fig6_combined():
                 meds.append(np.nan)
                 continue
             key = "swpe_shots_db" if "swpe_shots_db" in runs[0] else "swpe_db"
-            m = [float(np.median(d[key])) for d in runs]
+            if at_phi0:
+                m = [float(np.median(
+                    d[key][..., int(np.argmin(np.abs(d["phi_trues"])))]))
+                    for d in runs]
+            else:
+                m = [float(np.median(d[key])) for d in runs]
             meds.append(np.median(m))
             ax1.errorbar([N], [np.median(m)],
                          yerr=[[np.median(m) - np.min(m)],
@@ -119,7 +132,7 @@ def fig6_combined():
                          fmt=mk, color=color, capsize=3, ms=6)
         ax1.plot(Ns, meds, color=color, lw=1.2, label=label)
     ax1.set_xlabel("Number of particles $N$")
-    ax1.set_ylabel("Median SWPE, finite shots (dB)")
+    ax1.set_ylabel("SWPE, finite shots (dB)")
     ax1.set_xticks(Ns)
     ax1.legend(frameon=False, fontsize=8)
     ax1.grid(True, ls="--", alpha=0.3)

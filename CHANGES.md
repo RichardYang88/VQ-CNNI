@@ -19,10 +19,11 @@ point-by-point replies are in `paper/response_to_reviewers.tex`.
 - VQ-CNNI-fixed: −5.7 dB (worst seed −5.7, best −5.8); VQ-CNNI: −62.5 dB
 - Isolated decoder contribution: ≈ −56 dB
 
-### Scaling (N=4,6,8; 3 seeds; finite-shot median SWPE)
-- VQ-CNNI: −62.4 (N=4), −59.1 (N=6), −57.1 (N=8) dB
-- Baselines between ≈+0.6 dB and ≈−12.7 dB with no systematic improvement in N (VQI-local −3.4/−5.6/−7.1; VQI-LinearEst −0.2/+0.6/−8.7; VQI-NonParamEst −9.4/−9.9/−12.7)
-- Gap ≥44 dB at every N (53.0 dB at N=4, 49.2 dB at N=6, 44.4 dB at N=8)
+### Scaling (N=4,6,8; 3 seeds; finite-shot SWPE)
+- VQ-CNNI (full-range median): −62.4 (N=4), −59.1 (N=6), −57.1 (N=8) dB
+- VQI baselines reported at their optimal operating point φ≈0 (locally optimal estimators): VQI-local −44.9/−50.4/−55.3; VQI-LinearEst −32.2/−34.2/−48.3; VQI-NonParamEst −26.8/−19.0/−59.8 dB
+- Full-range medians of the baselines remain between ≈+0.6 dB and ≈−12.7 dB with no systematic improvement in N (VQI-local −3.4/−5.6/−7.1; VQI-LinearEst −0.2/+0.6/−8.7; VQI-NonParamEst −9.4/−9.9/−12.7)
+- Gap to the best operating-point baseline: ≈18 dB (N=4), ≈9 dB (N=6), ≈−2.7 dB (N=8, VQI-NonParamEst locally best at φ≈0 while its full-range median is −12.7 dB)
 
 ### Noise robustness (trained N=8 model, Softsign activation; median SWPE over 50 test phases, exact noisy outcome probabilities)
 - Depolarizing: −75.4 dB (0) → −23.5 dB (p=1e-3) → −8.35 dB (p=5e-3) → +0.9 dB (p=0.02)
@@ -77,7 +78,7 @@ point-by-point replies are in `paper/response_to_reviewers.tex`.
 - Seventh round (Fig. 5 layout): the six-panel latent-manifold block was squeezed into the narrow bottom-left column and rendered too small; it is moved to the wide top-right slot next to (a). Panels renumbered in reading order: (a) SWPE curves, (b) latent manifolds (enlarged), (c) exact ranking, (d) finite-shot ranking, (e) response-gain statistics (horizontally compressed); bottom row is now (c)+(d)+(e). Old→new mapping: b→c, c→d, d→b. Manuscript text, Fig. 5 caption and response-letter cross-references updated accordingly (reviewer quotes kept verbatim).
 
 ### Sec. III.E (new): scaling with system size and robustness to noise
-- Scaling with N=4,6,8 (3 seeds per model, identical hyperparameters; Fig. 6a, finite-shot median SWPE only; all three VQI baselines included).
+- Scaling with N=4,6,8 (3 seeds per model, identical hyperparameters; Fig. 6a, finite-shot SWPE; the three locally optimal VQI baselines reported at their optimal operating point φ≈0, VQ-CNNI as the full-range median).
 - Gate/readout noise impact study (Fig. 6b; Softsign activation stated) (R2.4, R2.5).
 - Second round: noise-aware fine-tuning removed (noise mitigation is not required; mentioned as future work only); Fig. 7 removed and its noise-impact panel merged with the scaling panel into a two-panel Fig. 6.
 
