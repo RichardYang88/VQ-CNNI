@@ -1,0 +1,8 @@
+# Core dependencies for training and figure generation.
+# Tested with Python 3.10 and PennyLane 0.45.
+pennylane>=0.42
+autograd>=1.6
+numpy>=1.26
+matplotlib>=3.8
+pillow>=10.0
+pypdf>=4.0

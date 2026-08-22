@@ -1,0 +1,7 @@
+[local N=4 s=0] it=100 loss=1.4959e-01 best=1.4956e-01
+[local N=4 s=0] it=200 loss=1.4955e-01 best=1.4955e-01
+[local N=4 s=0] it=300 loss=1.4955e-01 best=1.4955e-01
+[local N=4 s=0] it=400 loss=1.4955e-01 best=1.4955e-01
+[local N=4 s=0] it=500 loss=1.4955e-01 best=1.4955e-01
+Early stop at 569
+Saved results/vqi_local_N4_s0.npz; median SWPE=-3.41 dB, QFI=6.592

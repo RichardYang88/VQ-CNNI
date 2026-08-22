@@ -1,0 +1,7 @@
+readout q=0.0: median SWPE=-75.44 dB, FI(phi=0)=2.247
+readout q=0.001: median SWPE=-49.85 dB, FI(phi=0)=2.210
+readout q=0.002: median SWPE=-44.18 dB, FI(phi=0)=2.174
+readout q=0.005: median SWPE=-36.42 dB, FI(phi=0)=2.071
+readout q=0.01: median SWPE=-30.19 dB, FI(phi=0)=1.915
+readout q=0.02: median SWPE=-23.77 dB, FI(phi=0)=1.653
+Saved results/noise_eval_readout_N8.npz

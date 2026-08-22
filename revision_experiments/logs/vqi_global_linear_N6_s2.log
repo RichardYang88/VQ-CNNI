@@ -1,0 +1,8 @@
+[global_linear N=6 s=2] it=100 loss=2.8959e-01 best=2.8959e-01
+[global_linear N=6 s=2] it=200 loss=2.8860e-01 best=2.8860e-01
+[global_linear N=6 s=2] it=300 loss=2.8790e-01 best=2.8790e-01
+[global_linear N=6 s=2] it=400 loss=2.8784e-01 best=2.8784e-01
+[global_linear N=6 s=2] it=500 loss=2.8784e-01 best=2.8784e-01
+[global_linear N=6 s=2] it=600 loss=2.8784e-01 best=2.8784e-01
+Early stop at 618
+Saved results/vqi_global_linear_N6_s2.npz; median SWPE=0.61 dB, QFI=6.107

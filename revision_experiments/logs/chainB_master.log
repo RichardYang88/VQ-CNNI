@@ -1,0 +1,42 @@
+[chain B] VQI local N=4 seed=0 2026年 08月 14日 星期五 00:24:04 CST
+[chain B] VQI local N=4 seed=1 2026年 08月 14日 星期五 00:24:19 CST
+[chain B] VQI local N=4 seed=2 2026年 08月 14日 星期五 00:24:47 CST
+[chain B] VQI global_linear N=4 seed=0 2026年 08月 14日 星期五 00:25:07 CST
+run_all.sh: 第 45 行： 33008 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_linear N=4 seed=1 2026年 08月 14日 星期五 00:25:14 CST
+run_all.sh: 第 45 行： 33074 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_linear N=4 seed=2 2026年 08月 14日 星期五 00:25:31 CST
+[chain B] VQI global_lookup N=4 seed=0 2026年 08月 14日 星期五 00:26:00 CST
+run_all.sh: 第 45 行： 33223 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_lookup N=4 seed=1 2026年 08月 14日 星期五 00:27:07 CST
+run_all.sh: 第 45 行： 33485 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_lookup N=4 seed=2 2026年 08月 14日 星期五 00:27:21 CST
+run_all.sh: 第 45 行： 33635 总线错误            （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI local N=6 seed=0 2026年 08月 14日 星期五 00:27:42 CST
+run_all.sh: 第 45 行： 33697 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI local N=6 seed=1 2026年 08月 14日 星期五 00:27:48 CST
+[chain B] VQI local N=6 seed=2 2026年 08月 14日 星期五 00:28:26 CST
+run_all.sh: 第 45 行： 34069 非法指令            （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_linear N=6 seed=0 2026年 08月 14日 星期五 00:28:35 CST
+[chain B] VQI global_linear N=6 seed=1 2026年 08月 14日 星期五 00:29:30 CST
+run_all.sh: 第 45 行： 34258 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_linear N=6 seed=2 2026年 08月 14日 星期五 00:29:52 CST
+[chain B] VQI global_lookup N=6 seed=0 2026年 08月 14日 星期五 00:30:40 CST
+run_all.sh: 第 45 行： 34404 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_lookup N=6 seed=1 2026年 08月 14日 星期五 00:31:45 CST
+run_all.sh: 第 45 行： 34575 非法指令            （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_lookup N=6 seed=2 2026年 08月 14日 星期五 00:32:33 CST
+run_all.sh: 第 45 行： 34716 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI local N=8 seed=0 2026年 08月 14日 星期五 00:34:01 CST
+run_all.sh: 第 45 行： 34923 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI local N=8 seed=1 2026年 08月 14日 星期五 00:34:54 CST
+run_all.sh: 第 45 行： 35067 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI local N=8 seed=2 2026年 08月 14日 星期五 00:36:21 CST
+[chain B] VQI global_linear N=8 seed=0 2026年 08月 14日 星期五 00:38:42 CST
+[chain B] VQI global_linear N=8 seed=1 2026年 08月 14日 星期五 00:41:25 CST
+[chain B] VQI global_linear N=8 seed=2 2026年 08月 14日 星期五 00:43:45 CST
+[chain B] VQI global_lookup N=8 seed=0 2026年 08月 14日 星期五 00:46:30 CST
+[chain B] VQI global_lookup N=8 seed=1 2026年 08月 14日 星期五 00:53:33 CST
+run_all.sh: 第 45 行： 37796 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1
+[chain B] VQI global_lookup N=8 seed=2 2026年 08月 14日 星期五 00:54:34 CST
+run_all.sh: 第 45 行： 38031 段错误               （核心已转储） $PY train_vqi_global.py --variant $v --N $N --seed $s --out results/vqi_${v}_N${N}_s${s}.npz > logs/vqi_${v}_N${N}_s${s}.log 2>&1

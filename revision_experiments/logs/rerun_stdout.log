@@ -1,0 +1,8 @@
+rerun_missing_vqi.sh: 第 14 行： 46552 非法指令            （核心已转储） "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 46731 段错误               （核心已转储） "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 47011 段错误               （核心已转储） "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 49375 已杀死               "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 49431 已杀死               "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 49807 已杀死               "$@" > "$log" 2>&1
+rerun_missing_vqi.sh: 第 14 行： 49930 已杀死               "$@" > "$log" 2>&1
+RERUN DONE 2026年 08月 14日 星期五 09:42:44 CST

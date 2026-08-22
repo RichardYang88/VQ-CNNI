@@ -1,0 +1,5 @@
+it=200 loss=3.6759e-01
+it=400 loss=3.3155e-01
+it=600 loss=3.1676e-01
+Early stop at 643
+Saved results/vqcnni_fixed_N8.npz; median SWPE=-5.69 dB

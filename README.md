@@ -1,117 +1,145 @@
-# VQ‑CNNI: hybrid variational quantum–classical neural network interferometer for Phase Estimation
+# VQ-CNNI — variational quantum–classical neural network interferometer
 
-This repository implements a hybrid quantum–classical model for estimating an unknown phase \(\phi\).  
-A **parametrized quantum circuit (PQC)** is used to generate a probability distribution over the computational basis states.  
-These probabilities are then aggregated according to the imbalance quantum number \(m = (\#0 - \#1)\) and fed into a classical **multi‑layer perceptron (MLP)**. The MLP outputs a two‑dimensional vector whose arctangent directly yields the estimate \(\hat{\phi}\).
+Code and data accompanying the paper **"Global Quantum Sensing with a
+Variational Quantum-Classical Neural Network Interferometer"** (revised
+manuscript: [`paper/manuscript.pdf`](paper/manuscript.pdf)).
 
-> In short: **PQC → probability distribution → aggregation by \(m\) → MLP → \(\hat{\phi}\)**.
-
-The code is written with **PennyLane** and supports multiple activation functions (`softsign`, `sigmoid`, `softplus`, `ELU`, `tanh`, `ReLU`). It also includes utilities for computing the Quantum Fisher Information (QFI) and squared wrapped phase error (SWPE) of the trained estimator.
-
-The repository contains six variants of the VQ‑CNNI (each with a different activation function), separate scripts for **VQI extreme regime training/testing**, and a Jupyter notebook `data_analysis.ipynb` that produces all figures used in the paper.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Repository Structure](#repository-structure)
-- [Dependencies](#dependencies)
-- [Running the Code](#running-the-code)
-- [Key Functions](#key-functions)
-- [Extending the Code](#extending-the-code)
-- [Citation](#citation)
+The model estimates an unknown phase φ with a hybrid pipeline:
+**parametrized quantum circuit → basis-state probabilities → aggregation by
+population imbalance m → classical MLP → φ̂ = arctan2(y₀, y₁)**, trained with
+the squared wrapped phase error (SWPE) loss.
 
 ---
 
-## Overview
-
-The model consists of the following stages:
-
-1. **Encoding layers** – apply \(R_Z\) twists, \(R_X\) twists, and collective \(R_X\) gates (controlled by trainable parameters \(\theta\)).
-2. **Phase encoding** – encode the unknown \(\phi\) via \(R_Z(\phi)\) on every qubit.
-3. **Decoding layers** – symmetric structure to the encoding but with independent trainable parameters \(\boldsymbol{\chi}\).
-4. **Measurement** – the circuit outputs a probability distribution \(p(s)\) over the \(2^{n}\) computational basis states \(|s\rangle\).
-5. **Aggregation by \(m\)** – for each basis state, compute \(m = \#0 - \#1\). Sum probabilities of all states with the same \(m\) to obtain a vector \(\mathbf{p}_m\) of length \(2n+1\).
-6. **Classical neural network** – an MLP maps \(\mathbf{p}_m\) to a 2‑D vector \((y_0, y_1)\). The estimated phase is \(\hat{\phi} = \arctan2(y_0, y_1)\).
-7. **Loss function** – squared wrapped phase error (SWPE): \(2\bigl(1-\cos(\phi - \hat{\phi})\bigr)\), averaged over a uniform training grid of \(\phi\) values in \([-\pi, \pi]\).
-
-Training uses the Adam optimizer (PennyLane’s built‑in) with analytic gradients (statevector simulation).
-
----
-
-## Repository Structure
+## Repository structure
 
 ```text
-├── vqc_mlp_sigmoid.py              # Activation = sigmoid
-├── vqc_mlp_softsign.py             # Activation = softsign
-├── vqc_mlp_softsign-shift.py             # Activation = softsign-shift
-├── vqc_mlp_elu.py                  # Activation = ELU
-├── vqc_mlp_tanh.py                 # Activation = tanh
-├── vqc_mlp_arctan.py                 # Activation = arctan
-├── vqc_mlp_softsign-fixedParam.py        # Activation = softsign，fixed quantum params
-├── VQI.py                         # VQI baseline
-├── data_analysis.ipynb             # Jupyter notebook for generating all paper figures
+├── vqc_mlp_softsign.ipynb          # Original VQ-CNNI training notebook (Softsign, main model)
+├── vqc_mlp_tanh.ipynb              # Activation variants:
+├── vqc_mlp_arctan.ipynb            #   tanh / arctan / sigmoid /
+├── vqc_mlp_sigmoid.ipynb           #   ELU / softsign-shift
+├── vqc_mlp_elu.ipynb
+├── vqc_mlp_softsign-shift.ipynb
+├── vqc_mlp_softsign-fixedParam.ipynb  # fixed-circuit-parameter variant
+├── VQI.ipynb                       # Original VQI (baseline) training notebook
+├── Data_analysis.ipynb             # Original analysis notebook (figures of the first submission)
+├── VQ-CNNI/                        # Trained VQ-CNNI models, N=8, enc=dec=1 (per activation)
+├── VQ-CNNI_fixedParam/             # Fixed-decoder ablation model
+├── VQI/                            # Trained VQI-local baseline model
+├── Epoch_heatmap_manifold.pdf      # Vector snapshot panels embedded in Fig. 4
+├── revision_experiments/           # Reproducible pipeline used for the revised paper
+│   ├── vqcnni_lib.py               #   PennyLane model library (circuit, MLP, Adam, QFI, SWPE)
+│   ├── vqsim.py                    #   NumPy-only simulator used to re-render figure panels
+│   ├── train_vqcnni_scaling.py     #   VQ-CNNI training (N=4/6/8, seeds) + activation comparison
+│   ├── train_vqi_global.py         #   VQI baselines: local / linear estimator / lookup estimator
+│   ├── train_fixed.py              #   fixed-decoder ablation
+│   ├── noise_study.py              #   noise evaluation and noise-aware fine-tuning
+│   ├── make_figures.py             #   generates every paper figure → paper/figures_rev/
+│   ├── summarize.py                #   prints every number quoted in the manuscript
+│   ├── check_equiv.py              #   sanity check of the noise-channel equivalence
+│   ├── run_all.sh                  #   main batch runner (all revision experiments)
+│   ├── chain_activations.sh        #   activation-comparison runner
+│   ├── rerun_missing_vqi.sh        #   backfill runner (missing seeds, fixed decoder, depol FT)
+│   ├── run_depol_ft.sh             #   retried depolarizing fine-tuning runner
+│   ├── results/                    #   saved NumPy archives (.npz) of all archived runs
+│   └── logs/                       #   training logs of the archived runs
+├── paper/                          # Manuscript sources and final figures
+│   ├── manuscript.tex, references.bib, manuscript.pdf
+│   ├── response_to_reviewers.tex   # Point-by-point reply to the referee reports
+│   ├── 1.pdf                       # Fig. 1 (schematic)
+│   ├── figures_rev/                # Figs. 2–6 (vector PDFs from make_figures.py)
+│   └── CHANGES.md                  # Detailed list of revision changes
+├── CHANGES.md                      # Summary of revision changes with verified numbers
+├── requirements.txt
 └── README.md
-
+```
 
 ---
 
-## Dependencies
+## Environment
 
-- Python ≥ 3.8
-- [PennyLane](https://pennylane.ai/) ≥ 0.42
-- NumPy
-- Matplotlib
-- Jupyter (for the analysis notebook)
-
-Install all required packages with:
+Requires Python ≥ 3.10 (tested with Python 3.10, PennyLane 0.45):
 
 ```bash
-pip install pennylane numpy matplotlib jupyter
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
+
+Add `pip install jupyter` if you want to open the original notebooks.
 
 ---
 
-## Running the Code
+## Reproducing the paper (fast path)
 
-To train a model:
+All trained arrays are included in the repository, so the figures and the
+manuscript numbers can be regenerated without retraining:
 
 ```bash
-python vqc_mlp_xxx.py
+python revision_experiments/make_figures.py   # writes paper/figures_rev/*.pdf
+python revision_experiments/summarize.py      # prints all quoted SWPE/QFI numbers
 ```
 
-During training, the script prints the loss and evaluates the test Loss and QFI every 10 iterations.  
-Early stopping is implemented: training stops if the loss does not improve for 100 consecutive iterations (after a minimum of 500 iterations).
+Figure → source mapping:
 
-All results (including the final and best models) are saved in the directory:
+| Paper figure | Generator (`make_figures.py`) | Data |
+|---|---|---|
+| Fig. 2 (`fig2_baselines.pdf`) | `fig2_baselines` | `results/{vqi_local,vqi_global_linear,vqi_global_lookup,vqcnni}_N8_s{0,1,2}.npz` |
+| Fig. 3 (`fig3_geometry.pdf`) | `fig3_geometry` | saved models in `VQ-CNNI/…/softsign`, `VQ-CNNI_fixedParam/…/softsign`, `VQI/…` |
+| Fig. 4 (`fig4_inset.pdf`) | `fig4_inset` | `VQ-CNNI/…/softsign` training curves + `Epoch_heatmap_manifold.pdf` |
+| Fig. 5 (`fig5_active.pdf`) | `fig5_active` | `results/act_*_N8.npz` + saved models of all six activations |
+| Fig. 6 (`fig6_combined.pdf`) | `fig6_combined` | scaling `results/*_N{4,6,8}_s*.npz` + `results/noise_eval_*_N8.npz` |
+| ranking (`fig_ranking_shots.pdf`) | `fig_ranking_shots` | `phi_preds*.npy` of the saved models (used in the response letter) |
 
-```text
-VQ-CNNI/<n_qubits>/vqc_<n_enc>_<n_dec>/<activation>/
+## Rerunning the experiments
+
+To rerun everything from scratch (takes several hours on a workstation):
+
+```bash
+cd revision_experiments
+bash run_all.sh              # VQ-CNNI scaling + noise study (chain A) and VQI baselines (chain B)
+bash chain_activations.sh    # six-activation comparison at N=8
+bash rerun_missing_vqi.sh    # backfills missing seeds, fixed-decoder run, depol fine-tuning
 ```
 
-For example:  
-`VQ-CNNI/8/vqc_1_1/softsign/`
+Individual runs, e.g.:
+
+```bash
+python revision_experiments/train_vqcnni_scaling.py --N 8 --seed 0 \
+    --out revision_experiments/results/vqcnni_N8_s0.npz
+python revision_experiments/noise_study.py --stage eval --noise depol \
+    --levels 0,0.001,0.002,0.005,0.01,0.02 --N 8 \
+    --model revision_experiments/results/vqcnni_N8_s0.npz \
+    --out revision_experiments/results/noise_eval_depol_N8.npz
+```
+
+The original notebooks (`vqc_mlp_*.ipynb`, `VQI.ipynb`) train the models saved
+under `VQ-CNNI/`, `VQ-CNNI_fixedParam/` and `VQI/`; `Data_analysis.ipynb`
+reproduces the analysis figures of the first submission from those saved
+models. All hyperparameters are listed in Table I of the manuscript.
 
 ---
 
-## Key Functions
+## Model summary
 
-- `circuit_state(phi, q_params)` – returns the full statevector for given \(\phi\) and quantum parameters.
-- `circuit_probs(phi, q_params)` – returns the probability distribution over computational basis states.
-- `probs_to_p_m(probs)` – aggregates the probabilities into the \(m\) subspaces, producing the vector \(\mathbf{p}_m\).
-- `MLP` – classical neural network that maps \(\mathbf{p}_m\) to a 2‑D output.
-- `objective(x)` – the loss function evaluated over the whole training set.
-- `compute_QFI(phi, q_params)` – computes the quantum Fisher information of the pure output state using a central‑difference derivative.
-- `evaluate_model(x)` – returns the test Loss (on the test grid) and QFI (at \(\phi=0\)).
-- `adjust_phase_wrap(phi_true, phi_pred)` – corrects the \(\pm 2\pi\) ambiguity of the arctan output.
+1. **Encoding/decoding layers** — R_Z twists, R_X twists and collective R_X
+   gates with trainable parameters (enc = dec = 1 for all results here).
+2. **Phase encoding** — R_Z(φ) on every qubit.
+3. **Measurement** — probability distribution p(s) over the 2ᴺ basis states.
+4. **Aggregation by m** — probabilities summed over states with equal
+   imbalance m = #0 − #1, giving a vector of length N+1.
+5. **Classical MLP** — (N+1) → 128 → 64 → 2 with L2-normalized output;
+   φ̂ = arctan2(y₀, y₁).
+6. **Loss** — SWPE: 2(1 − cos(φ − φ̂)) over a uniform grid in [−π, π).
 
 ---
 
 ## Citation
 
-If you use this code in your research, please cite the associated paper (to be added upon publication).  
-For questions or contributions, please open an issue in the repository.
+If you use this code, please cite the paper (citation details upon
+publication). For questions, open an issue in this repository.
 
-**Acknowledgments**  
-This work uses PennyLane for quantum circuit simulation and automatic differentiation. The ansatz design is inspired by [[arXiv:2107.01860](https://www.nature.com/articles/s41586-022-04435-4)].
+**Acknowledgments** — This work uses [PennyLane](https://pennylane.ai/) for
+quantum circuit simulation and automatic differentiation. The ansatz design is
+inspired by [Arrazola et al., Nature 611, 679 (2022)](https://www.nature.com/articles/s41586-022-04435-4).
+
