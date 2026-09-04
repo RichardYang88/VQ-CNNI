@@ -38,11 +38,18 @@ def load_runs(prefix, N, seeds=(0, 1, 2)):
 
 
 def fig2_baselines(N=8):
-    """New Fig.2: fair baseline comparison under finite shots."""
+    """New Fig.2: fair baseline comparison under finite shots.
+
+    Consistency convention: every model is shown from its single
+    seed-0 revision checkpoint (results/<prefix>_N8_s0.npz); for
+    VQ-CNNI this checkpoint is the notebook-exact retraining of the
+    original softsign model used in Fig.5, so all revised figures quote
+    the same finite-shot realization.
+    """
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.3))
     ax1, ax2 = axes
     for name, (pref, color, mk) in MODELS.items():
-        runs = load_runs(pref, N)
+        runs = load_runs(pref, N, seeds=(0,))
         if not runs:
             continue
         trues_all = runs[0]["phi_trues"]
@@ -119,16 +126,27 @@ def fig6_combined():
                 meds.append(np.nan)
                 continue
             key = "swpe_shots_db" if "swpe_shots_db" in runs[0] else "swpe_db"
+            # Unified whisker convention: for every method, pool all
+            # individual finite-shot evaluations (across seeds and trials)
+            # and report the 5th–95th percentile spread around the pooled
+            # median.  For VQ-CNNI this pools the 20×50 full-range
+            # evaluations, consistent with the box whiskers in Fig. 5(d).
+            # For the VQI baselines this pools the evaluations at the
+            # single operating phase φ≈0 across all seeds and trials.
             if at_phi0:
-                m = [float(np.median(
-                    d[key][..., int(np.argmin(np.abs(d["phi_trues"])))]))
-                    for d in runs]
+                # VQI: pool all trial evaluations at φ≈0 across all seeds
+                idx = int(np.argmin(np.abs(runs[0]["phi_trues"])))
+                all_vals = np.concatenate(
+                    [d[key][:, idx].ravel() for d in runs])
             else:
-                m = [float(np.median(d[key])) for d in runs]
-            meds.append(np.median(m))
-            ax1.errorbar([N], [np.median(m)],
-                         yerr=[[np.median(m) - np.min(m)],
-                               [np.max(m) - np.median(m)]],
+                # VQ-CNNI: pool all 20×50 full-range evaluations
+                all_vals = np.concatenate(
+                    [d[key].ravel() for d in runs])
+            point = np.median(all_vals)
+            meds.append(point)
+            ax1.errorbar([N], [point],
+                         yerr=[[point - np.percentile(all_vals, 5)],
+                               [np.percentile(all_vals, 95) - point]],
                          fmt=mk, color=color, capsize=3, ms=6)
         ax1.plot(Ns, meds, color=color, lw=1.2, label=label)
     ax1.set_xlabel("Number of particles $N$")
@@ -290,23 +308,23 @@ VQI_LINE_COLORS = {"VQI-local": "black"}
 
 
 def _load_ranking_data():
-    """Exact and finite-shot SWPE distributions of the original trained
-    models (phi_preds.npy: exact predictions; phi_preds_shots.npy: one
-    10^6-shot sampling trial per phase)."""
-    base = os.path.join(ROOT, "VQ-CNNI", "8", "vqc_1_1")
-    phi = np.linspace(-np.pi + np.pi / 100, np.pi + np.pi / 100, 50)
+    """Exact and finite-shot SWPE distributions of the retrained
+    activation models, loaded from the revision checkpoints
+    results/act_<act>_N8.npz (20 independent 10^6-shot trials each).
 
-    def swpe_of(pred):
-        d = np.angle(np.exp(1j * (pred - phi)))
-        return 10 * np.log10(d ** 2 + 1e-12)
-
+    Consistency note: with the notebook-aligned training protocol
+    (loss 2(1-cos), Adam beta2=0.99, init_seed=42, mlp_seed=0) these
+    checkpoints reproduce the original vqc_mlp_<act>.ipynb models, so
+    this panel and Fig.5 use the same experiments.
+    """
     exact, shots = {}, {}
     for a in RANK_ACTS:
-        p = os.path.join(base, a)
-        exact[a] = swpe_of(np.load(os.path.join(p, "phi_preds.npy")))
-        shots[a] = swpe_of(np.load(os.path.join(p, "phi_preds_shots.npy")))
+        d = np.load(os.path.join(RES, f"act_{a}_N8.npz"))
+        exact[a] = np.asarray(d["swpe_db"])
+        shots[a] = np.asarray(d["swpe_shots_db"]).ravel()
     order = sorted(RANK_ACTS, key=lambda a: np.median(exact[a]))
     return exact, shots, order
+
 
 
 def _vqi_ref_levels(mode):
@@ -351,7 +369,8 @@ def _ranking_panel(ax, data, order, refs, title=None, qfi=None, colors=None):
     if qfi is not None:
         labels = [f"{RANK_LABELS[a]}\n({qfi[a]:.1f})" for a in order]
     bp = ax.boxplot([data[a] for a in order], tick_labels=labels,
-                    showfliers=False, patch_artist=True, widths=0.6)
+                    showfliers=False, patch_artist=True, widths=0.6,
+                    whis=(5, 95))
     for i, patch in enumerate(bp["boxes"]):
         c = colors[order[i]] if colors is not None else "#9ecae1"
         patch.set_facecolor(c)
@@ -596,14 +615,21 @@ def fig3_geometry():
           vqsim.pca2(np.stack([vqsim.mlp_latent(mlp_cnn, x) for x in pm_cnn])),
           "VQ-CNNI", "f")
 
-    # column 4: SWPE boxplot from the original predictions (g)
+    # column 4: exact SWPE boxplot (g), from the seed-0 revision
+    # checkpoints (same data as Fig.2b exact mode; the VQ-CNNI
+    # checkpoint is the notebook-exact retraining of the softsign model
+    # whose manifold is shown in panels (b) and (f))
     ax = fig.add_subplot(outer[3])
     names = ["VQI-local", "VQ-CNNI", "VQ-CNNI-fixed"]
-    boxes = [swpe_of(np.load(os.path.join(vqi_d, "phi_preds.npy"))),
-             swpe_of(np.load(os.path.join(cnn_d, "phi_preds.npy"))),
-             swpe_of(np.load(os.path.join(fix_d, "phi_preds.npy")))]
+    boxes = [np.asarray(np.load(os.path.join(
+                 RES, "vqi_local_N8_s0.npz"))["swpe_db"]),
+             np.asarray(np.load(os.path.join(
+                 RES, "vqcnni_N8_s0.npz"))["swpe_db"]),
+             np.asarray(np.load(os.path.join(
+                 RES, "vqcnni_fixed_N8.npz"))["swpe_db"])]
     bp = ax.boxplot(boxes, tick_labels=names, showfliers=False,
                     patch_artist=True, whis=(5, 95))
+
     for patch, c in zip(bp["boxes"], ["#1f77b4", "#d62728", "#2ca02c"]):
         patch.set_facecolor(c)
         patch.set_alpha(0.4)

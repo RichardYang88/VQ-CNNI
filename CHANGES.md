@@ -103,3 +103,22 @@ point-by-point replies are in `paper/response_to_reviewers.tex`.
 ## Repository
 - `revision_experiments/`: training scripts (`train_vqcnni_scaling.py`, `train_vqi_global.py`, `train_fixed.py`), shared library `vqcnni_lib.py`, batch runner `run_all.sh`, noise study `noise_study.py`, summarizer `summarize.py`, figure generator `make_figures.py`, trained checkpoints (`checkpoints/`), numerical results (`results/*.npz`), logs (`logs/`).
 
+## Final revision round (2026-09-04)
+- Canonical data basis: the revised figures (Figs. 2, 3g, 5, 6b) now quote the
+  original trained models of the original manuscript, exported as revision
+  checkpoints by revision_experiments/export_original_models.py (retraining is
+  sensitive to low-level numerics in this environment). Softsign VQ-CNNI N=8
+  numbers therefore coincide with the original submission again (exact median
+  -69.2 dB; odd-symmetry breaking -69.2 -> -43.0 dB; response-gain variance
+  5.55e-6, lowest of all six activations).
+- Added a reviewer-facing clarification that the different appearances of the
+  VQ-CNNI/Softsign SWPE distribution in Figs. 2b, 3g and 5c,d reflect only the
+  different statistical dimensions displayed (phase-resolved trial band, box
+  over the 50 test phases, and box pooled over 20 trials x 50 phases), not
+  different data; Fig. 5c,d provides the most comprehensive pooled statistics.
+- Statistics convention: one canonical trained model per VQ-CNNI/activation
+  configuration; three seeds retained for the VQI baselines (Fig. 6a).
+- All affected numbers updated in manuscript.tex and
+  response_to_reviewers.tex; figures regenerated (paper/2,3,5,6.pdf);
+  manuscript_changes.tex regenerated; details in paper/CHANGES.md.
+

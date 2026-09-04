@@ -77,14 +77,18 @@ def main():
         p_m = probs_to_p_m(probs, masks)
         cos_t = pnp.sum(p_m * pnp.cos(phi_train_uniform[:, None]
                                       - a * unique_m[None, :]), axis=1)
-        return pnp.mean(1 - cos_t)
+        # circular SWPE loss, same convention as the notebooks:
+        # 2 * mean(1 - cos(phi - phi_hat))
+        return 2.0 * pnp.mean(1 - cos_t)
 
     def global_lookup_loss(theta, curly, c):
         probs = circuit_probs(pnp.array(phi_train_uniform), theta, curly)
         p_m = probs_to_p_m(probs, masks)
         cos_t = pnp.sum(p_m * pnp.cos(phi_train_uniform[:, None]
                                       - c[None, :]), axis=1)
-        return pnp.mean(1 - cos_t)
+        # circular SWPE loss, same convention as the notebooks:
+        # 2 * mean(1 - cos(phi - phi_hat))
+        return 2.0 * pnp.mean(1 - cos_t)
 
     def unpack(x):
         theta, curly = x[:3], x[3:6]

@@ -238,26 +238,34 @@ class MLP:
 
 
 # ----------------------------------------------------------------------
-# Manual Adam (matches qml.AdamOptimizer defaults)
+# Manual Adam — bit-equivalent to qml.AdamOptimizer(stepsize, beta1=0.9,
+# beta2=0.99, eps=1e-8) as implemented in PennyLane >= 0.30:
+# moments are accumulated WITHOUT bias correction and the correction is
+# folded into the step size instead,
+#     eta_t = eta * sqrt(1 - beta2^t) / (1 - beta1^t),
+#     x <- x - eta_t * fm / (sqrt(sm) + eps).
+# NOTE: PennyLane's default is beta2 = 0.99 (NOT 0.999); using any other
+# value changes the training trajectory and breaks reproducibility of the
+# original notebooks, which used qml.AdamOptimizer(stepsize=0.02).
 # ----------------------------------------------------------------------
 class Adam:
-    def __init__(self, lr=0.02, beta1=0.9, beta2=0.999, eps=1e-8):
+    def __init__(self, lr=0.02, beta1=0.9, beta2=0.99, eps=1e-8):
         self.lr, self.b1, self.b2, self.eps = lr, beta1, beta2, eps
-        self.m = None
-        self.v = None
+        self.fm = None
+        self.sm = None
         self.t = 0
 
     def step(self, x, g):
-        self.t += 1
-        if self.m is None:
-            self.m = np.zeros_like(np.asarray(x), dtype=float)
-            self.v = np.zeros_like(np.asarray(x), dtype=float)
+        if self.fm is None:
+            self.fm = np.zeros_like(np.asarray(x), dtype=float)
+            self.sm = np.zeros_like(np.asarray(x), dtype=float)
         g = np.asarray(g, dtype=float)
-        self.m = self.b1 * self.m + (1 - self.b1) * g
-        self.v = self.b2 * self.v + (1 - self.b2) * g ** 2
-        mh = self.m / (1 - self.b1 ** self.t)
-        vh = self.v / (1 - self.b2 ** self.t)
-        return pnp.array(x - self.lr * mh / (np.sqrt(vh) + self.eps),
+        self.fm = self.b1 * self.fm + (1 - self.b1) * g
+        self.sm = self.b2 * self.sm + (1 - self.b2) * g ** 2
+        self.t += 1
+        # bias correction folded into the step size (PennyLane convention)
+        eta = self.lr * np.sqrt(1 - self.b2 ** self.t) / (1 - self.b1 ** self.t)
+        return pnp.array(x - eta * self.fm / (np.sqrt(self.sm) + self.eps),
                          requires_grad=True)
 
 

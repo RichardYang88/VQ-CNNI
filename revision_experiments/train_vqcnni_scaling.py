@@ -2,15 +2,33 @@
 VQ-CNNI (Softsign) training for the system-size scaling study
 (PRR revision, Reviewer 2 Comment 5).
 
-Identical architecture/hyperparameters to the original softsign notebook:
+Strictly identical architecture/hyperparameters to the original
+vqc_mlp_softsign.ipynb (and the other activation notebooks):
   * N qubits, enc=dec=1 circuit (6 quantum parameters)
-  * MLP: (N+1) -> 128 -> 64 -> 2, softsign hidden activations, linear
-    L2-normalized output, phi_pred = arctan2(v0, v1)
-  * circular loss over 100 uniform training phases in [-pi, pi)
-  * Adam, lr=0.02, T=3000, patience=100, M_min=500, eval every K=10
+  * MLP: (N+1) -> 128 -> 64 -> 2, activation hidden layers, linear
+    L2-normalized output (eps 1e-6), phi_pred = arctan2(v0, v1)
+  * circular SWPE loss  2 * mean(1 - cos(phi - phi_pred))  over the 100
+    uniform training phases phi_train = linspace(-pi, pi, 100)
+  * Adam with the exact PennyLane qml.AdamOptimizer(stepsize=0.02)
+    update rule (beta1=0.9, beta2=0.99, eps=1e-8; bias correction folded
+    into the step size), T=3000, patience=100, M_min=500, eval every 10
+  * theta/curly initialized from U(-0.1, 0.1) with the notebook global
+    seed (init_seed=42 by default, `np.random.seed(seed=42)` in the
+    notebook); the MLP is always initialized with its own
+    RandomState(mlp_seed=0), exactly as `MLP(dim_in, dim_hidden=128)`
+    (default seed=0) in the notebooks.
+  * test grid: phi_trues = linspace(-pi + pi/100, pi + pi/100, 50),
+    except for act=softsign_shift where the notebook evaluates on
+    phi_trues = linspace(-pi, pi - 2*pi/100, 50).
+
+With the defaults (--init_seed 42, --mlp_seed 0) the N=8 softsign run
+reproduces the original model saved in VQ-CNNI/8/vqc_1_1/softsign/
+(the checkpoint used by Fig.5b of the manuscript).
 
 Usage:
-  python train_vqcnni_scaling.py --N 4 --seed 0 --out results/vqcnni_N4_s0.npz
+  python train_vqcnni_scaling.py --N 8 --act softsign --seed 0 \
+      --out results/vqcnni_N8_s0.npz            # notebook-exact run
+  python train_vqcnni_scaling.py --N 8 --seed 1 --init_seed 1 ...  # repeats
 """
 
 import argparse
@@ -50,7 +68,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--act", default="softsign")
     ap.add_argument("--N", type=int, default=4)
-    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=0,
+                    help="run index; seeds only the finite-shot evaluation "
+                         "RNG (seed+1000) and labels the output file")
+    ap.add_argument("--init_seed", type=int, default=42,
+                    help="global RNG seed for the theta/curly "
+                         "initialization; 42 = the value hard-coded in "
+                         "every original activation notebook")
+    ap.add_argument("--mlp_seed", type=int, default=0,
+                    help="seed of the MLP's own RandomState; 0 = the "
+                         "notebook MLP default")
     ap.add_argument("--maxiter", type=int, default=3000)
     ap.add_argument("--lr", type=float, default=0.02)
     ap.add_argument("--patience", type=int, default=100)
@@ -62,20 +89,29 @@ def main():
 
     N = args.N
     act = get_act(args.act)
-    np.random.seed(args.seed)
     index_to_m, unique_m, masks = m_structure(N)
     n_m = len(unique_m)
 
     circuit_probs = build_probs_qnode(N)
     circuit_state = build_state_qnode(N)
 
+    # training grid: uniform on [-pi, pi] (endpoints included), weight
+    # 1/100 each, exactly as in the notebooks
     phi_train, phi_trues = test_phases(100, 50)
+    if args.act == "softsign_shift":
+        # the softsign_shift notebook evaluates on the shifted grid
+        # linspace(-pi, pi - 2*pi/100, 50) instead of the offset grid
+        phi_trues = np.linspace(-np.pi, np.pi - 2 * np.pi / 100, 50)
     phi_train_pnp = pnp.array(phi_train)
 
-    theta = pnp.array(np.random.uniform(-0.1, 0.1, 3), requires_grad=True)
-    curly = pnp.array(np.random.uniform(-0.1, 0.1, 3), requires_grad=True)
-    net = MLP(dim_in=n_m, dim_hidden=args.hidden, seed=args.seed)
+    # quantum-parameter initialization: U(-0.1, 0.1) drawn from the
+    # notebook global seed (np.random.seed(init_seed) in the notebooks)
+    rng_init = np.random.RandomState(args.init_seed)
+    theta = pnp.array(rng_init.uniform(-0.1, 0.1, 3), requires_grad=True)
+    curly = pnp.array(rng_init.uniform(-0.1, 0.1, 3), requires_grad=True)
+    net = MLP(dim_in=n_m, dim_hidden=args.hidden, seed=args.mlp_seed)
     mlp_flat = np.concatenate([np.ravel(p) for p in net.parameters()])
+
 
     mlp_shapes = [p.shape for p in net.parameters()]
     mlp_sizes = [p.size for p in net.parameters()]
@@ -92,8 +128,9 @@ def main():
         h1 = act(p_m @ W1.T + b1)
         h2 = act(h1 @ W2.T + b2)
         out = h2 @ W3.T + b3
-        norm = pnp.sqrt(pnp.sum(out ** 2, axis=1, keepdims=True) + 1e-12)
-        return out / norm
+        # L2-normalized output with the notebook's eps: out/(||out|| + 1e-6)
+        norm = pnp.sqrt(pnp.sum(out ** 2, axis=1)) + 1e-6
+        return out / norm[:, None]
 
     def loss_fn(x):
         theta, curly = x[:3], x[3:6]
@@ -102,7 +139,10 @@ def main():
         p_m = probs_to_p_m(probs, masks)                         # (B,n_m)
         v = net_batch(p_m, params)
         phi_pred = pnp.arctan2(v[:, 0], v[:, 1])
-        return pnp.mean(1 - pnp.cos(phi_train_pnp - phi_pred))
+        # notebook objective: sum_i w_i * 2 (1 - cos(phi_i - phi_pred_i))
+        # with uniform weights w_i = 1/100  =>  2 * mean(1 - cos(...))
+        return 2.0 * pnp.mean(1 - pnp.cos(phi_train_pnp - phi_pred))
+
 
     grad_fn = autograd.grad(loss_fn)
     opt = Adam(lr=args.lr)
@@ -179,7 +219,10 @@ def main():
              qfi_hist=np.array(qfi_hist), epochs=np.array(epoch_list),
              qfi=np.array(qfi),
              meta=json.dumps({"model": "VQ-CNNI", "activation": args.act,
-                              "N": N, "seed": args.seed, "lr": args.lr,
+                              "N": N, "seed": args.seed,
+                              "init_seed": args.init_seed,
+                              "mlp_seed": args.mlp_seed,
+                              "lr": args.lr,
                               "maxiter": args.maxiter,
                               "patience": args.patience,
                               "min_iters": args.min_iters,
@@ -187,9 +230,11 @@ def main():
                               "hidden": args.hidden,
                               "n_train": 100, "n_test": 50,
                               "n_shot_trials": 20, "shots": n_shots,
+                              "shot_rng_seed": args.seed + 1000,
                               "n_params_total": n_total,
                               "n_quantum": n_quantum,
                               "n_classical": n_mlp,
+                              "notebook": "vqc_mlp_%s.ipynb" % args.act,
                               "time_s": time.time() - t0}))
     print(f"Saved {args.out}; median SWPE={np.median(swpe):.2f} dB, "
           f"QFI={qfi:.3f}, total params={n_total}")

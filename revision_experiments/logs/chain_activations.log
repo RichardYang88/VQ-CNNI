@@ -1,6 +1,0 @@
-[activations] starting 2026年 08月 14日 星期五 09:43:12 CST
-chain_activations.sh: 第 20 行： 50603 段错误               （核心已转储） $PY train_vqcnni_scaling.py --act $act --N 8 --seed 0 --out $f > logs/act_${act}.log 2>&1
-[activations] attempt 1 failed for softsign 2026年 08月 14日 星期五 09:43:53 CST
-chain_activations.sh: 第 20 行： 54307 段错误               （核心已转储） $PY train_vqcnni_scaling.py --act $act --N 8 --seed 0 --out $f > logs/act_${act}.log 2>&1
-[activations] attempt 1 failed for arctan 2026年 08月 14日 星期五 10:13:24 CST
-[activations] DONE 2026年 08月 14日 星期五 10:42:34 CST

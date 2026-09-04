@@ -1,7 +1,0 @@
-[local N=8 s=1] it=100 loss=7.7076e-02 best=7.7075e-02
-[local N=8 s=1] it=200 loss=7.7073e-02 best=7.7073e-02
-[local N=8 s=1] it=300 loss=7.7073e-02 best=7.7073e-02
-[local N=8 s=1] it=400 loss=7.7073e-02 best=7.7073e-02
-[local N=8 s=1] it=500 loss=7.7074e-02 best=7.7073e-02
-Early stop at 501
-Saved results/vqi_local_N8_s1.npz; median SWPE=-7.14 dB, QFI=17.355

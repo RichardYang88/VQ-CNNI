@@ -1,10 +1,28 @@
 """
 VQ-CNNI-fixed protocol (PRR revision; matches the original
-VQ-CNNI_fixedParam experiment): freeze the circuit parameters of a
-trained VQI-local model and train only the Softsign MLP decoder under
-the circular loss. Since the circuit is fixed, the measurement
-probabilities for all training phases are precomputed once, making the
-training purely classical and fast.
+vqc_mlp_softsign-fixedParam.ipynb experiment): freeze the circuit
+parameters of the trained VQI-local model and train only the Softsign
+MLP decoder under the circular loss.
+
+Strict correspondence with the fixedParam notebook:
+  * frozen circuit = optimal VQI-local parameters; the notebook
+    hard-codes [3.58809973e-01, -4.38641827e-02, 5.88536701e-01,
+    5.08765401e-06, 1.68364862e-01, 9.57706065e-02], which is exactly
+    the VQI-local optimum reproduced by train_vqi_global.py --variant
+    local (the notebook hard-coded numbers come from the same training).
+  * MLP (N+1)->128->64->2 initialized from RandomState(mlp_seed) with
+    randn*0.1, zero biases; mlp_seed=42 by default because the notebook
+    calls `MLP(len(unique_m), seed=seed)` with seed=42.
+  * loss mean(1 - cos(phi - phi_hat)) over the 100 uniform training
+    phases linspace(-pi, pi, 100) -- the fixedParam notebook uses the
+    circular loss WITHOUT the factor 2 of the softsign notebook.
+  * test grid phi_trues = linspace(-pi, pi - 2*pi/100, 50) (the
+    notebook's shifted grid).
+  * Adam with the exact qml.AdamOptimizer(stepsize=0.02) update rule,
+    T=3000, patience=100, M_min=500.
+Since the circuit is fixed, the measurement probabilities for all
+training phases are precomputed once, making the training purely
+classical and fast.
 
 Usage:
   python train_fixed.py --vqi results/vqi_local_N8_s0.npz --N 8 \
@@ -32,6 +50,9 @@ def main():
     ap.add_argument("--vqi", required=True)
     ap.add_argument("--N", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--mlp_seed", type=int, default=42,
+                    help="MLP RandomState seed; 42 = the notebook value "
+                         "(MLP(len(unique_m), seed=seed) with seed=42)")
     ap.add_argument("--maxiter", type=int, default=3000)
     ap.add_argument("--lr", type=float, default=0.02)
     ap.add_argument("--patience", type=int, default=100)
@@ -48,7 +69,9 @@ def main():
     n_m = len(unique_m)
 
     circuit_probs = build_probs_qnode(N)
-    phi_train, phi_trues = test_phases(100, 50)
+    phi_train, _ = test_phases(100, 50)
+    # shifted test grid of the fixedParam notebook
+    phi_trues = np.linspace(-np.pi, np.pi - 2 * np.pi / 100, 50)
 
     # precompute training/test probabilities with frozen circuit
     pm_train = np.asarray(probs_to_p_m(
@@ -60,7 +83,7 @@ def main():
                                            pnp.array(theta),
                                            pnp.array(curly)))), masks))
 
-    r = np.random.RandomState(args.seed)
+    r = np.random.RandomState(args.mlp_seed)
     h = args.hidden
     W1 = pnp.array(r.randn(h, n_m) * 0.1, requires_grad=True)
     b1 = pnp.zeros(h, requires_grad=True)
@@ -83,8 +106,8 @@ def main():
         h1 = softsign(pm @ w1.T + bb1)
         h2 = softsign(h1 @ w2.T + bb2)
         out = h2 @ w3.T + bb3
-        return out / pnp.sqrt(pnp.sum(out ** 2, axis=1, keepdims=True)
-                              + 1e-12)
+        # notebook normalization: out / (||out|| + 1e-6)
+        return out / (pnp.sqrt(pnp.sum(out ** 2, axis=1)) + 1e-6)[:, None]
 
     pm_train_p = pnp.array(pm_train)
 
@@ -127,10 +150,13 @@ def main():
              theta_best=theta, curly_best=curly,
              phi_trues=phi_trues, phi_preds=preds, swpe_db=swpe,
              meta=json.dumps({"model": "VQ-CNNI-fixed", "N": N,
-                              "seed": args.seed, "lr": args.lr,
+                              "seed": args.seed,
+                              "mlp_seed": args.mlp_seed, "lr": args.lr,
                               "vqi_model": args.vqi,
+                              "notebook": "vqc_mlp_softsign-fixedParam.ipynb",
                               "time_s": time.time() - t0}))
     print(f"Saved {args.out}; median SWPE={np.median(swpe):.2f} dB")
+
 
 
 if __name__ == "__main__":

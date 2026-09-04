@@ -1,7 +1,0 @@
-depol p=0.0: median SWPE=-75.44 dB, QFI=4.595
-depol p=0.001: median SWPE=-23.50 dB, QFI=3.584
-depol p=0.002: median SWPE=-17.49 dB, QFI=2.839
-depol p=0.005: median SWPE=-8.35 dB, QFI=1.597
-depol p=0.01: median SWPE=-2.53 dB, QFI=0.840
-depol p=0.02: median SWPE=0.90 dB, QFI=0.327
-Saved results/noise_eval_depol_N8.npz
