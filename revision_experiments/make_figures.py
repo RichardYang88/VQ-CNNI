@@ -40,11 +40,13 @@ def load_runs(prefix, N, seeds=(0, 1, 2)):
 def fig2_baselines(N=8):
     """New Fig.2: fair baseline comparison under finite shots.
 
-    Consistency convention: every model is shown from its single
-    seed-0 revision checkpoint (results/<prefix>_N8_s0.npz); for
-    VQ-CNNI this checkpoint is the notebook-exact retraining of the
-    original softsign model used in Fig.5, so all revised figures quote
-    the same finite-shot realization.
+    The median/mean lines are computed from the seed-0 checkpoint
+    (results/<prefix>_N8_s0.npz); for VQ-CNNI this is the
+    notebook-exact retraining of the original softsign model used in
+    Fig.5.  The IQR shading (25th–75th percentile) pools all available
+    seeds (typically 0,1,2 for VQI variants; seed 0 only for VQ-CNNI),
+    capturing inter-seed variation so that the shading is visible for
+    all models.
     """
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.3))
     ax1, ax2 = axes
@@ -66,13 +68,19 @@ def fig2_baselines(N=8):
         ax1.plot(trues, mean_p, color=color, marker=mk, ms=4, lw=1.3,
                  label=name)
         ax1.fill_between(trues, lo, hi, color=color, alpha=0.15)
-        sw = np.concatenate([d["swpe_shots_db"][:, keep] for d in runs],
-                            axis=0)
-        med = np.median(sw, axis=0)
-        q1 = np.percentile(sw, 25, axis=0)
-        q3 = np.percentile(sw, 75, axis=0)
+        # SWPE line: seed-0 median (consistency convention)
+        sw_seed0 = np.concatenate([d["swpe_shots_db"][:, keep] for d in runs],
+                                  axis=0)
+        med = np.median(sw_seed0, axis=0)
         ax2.plot(trues, med, color=color, lw=1.4, label=name)
-        ax2.fill_between(trues, q1, q3, color=color, alpha=0.15)
+        # IQR shading: pool all available seeds for visible inter-seed spread
+        all_runs = load_runs(pref, N, seeds=(0, 1, 2))
+        if len(all_runs) >= 1:
+            sw_all = np.concatenate([d["swpe_shots_db"][:, keep]
+                                     for d in all_runs], axis=0)
+            q1 = np.percentile(sw_all, 25, axis=0)
+            q3 = np.percentile(sw_all, 75, axis=0)
+            ax2.fill_between(trues, q1, q3, color=color, alpha=0.25)
     ax1.plot(trues, trues, "k--", lw=1, alpha=0.6)
     ax1.set_xlabel(r"True phase $\phi$")
     ax1.set_ylabel(r"Predicted phase $\tilde{\phi}$")
@@ -173,6 +181,10 @@ def fig6_combined():
                          fontsize=8)
     ax2.set_xlabel("Noise level ($p$ or $q$)")
     ax2.set_ylabel("Median SWPE (dB)")
+    noise_levels = lv[lv > 0]
+    ax2.set_xticks(noise_levels)
+    ax2.set_xticklabels([f"{v:.3f}".rstrip("0").rstrip(".") for v in noise_levels])
+    ax2.tick_params(axis="x", which="minor", bottom=False)
     ax2.grid(True, ls="--", alpha=0.3)
     ax2.legend(frameon=False, fontsize=8)
 
